@@ -31,24 +31,13 @@ module Mi
       end
 
       def login(sid)
-        device_id = get_random(16).upcase
-        cookies = DEFAULT_COOKIES.merge({
-                                          "deviceId" => device_id
-                                        })
+        device_id = info["deviceId"] || get_random(16).upcase
+        response_json = service_login(sid)
 
-        headers = DEFAULT_HEADERS.merge({
-                                          "Cookie" => cookie2str(cookies)
-                                        })
-        client = Faraday.new do |faraday|
-          faraday.response :logger if debug
-          faraday.headers = headers
+        if (response_json["code"]).zero?
+          @success = true
+          return
         end
-        response = client.get(
-          "https://account.xiaomi.com/pass/serviceLogin?sid=#{sid}&_json=true"
-        )
-
-        response_json = JSON.parse(response.body.sub("&&&START&&&", ""))
-        return unless response_json["code"] != 0
 
         data = {
           _json: "true",
@@ -59,8 +48,8 @@ module Mi
           user: userid,
           hash: md5_hash(password)
         }
-        response2 = service_login(data, sid)
-        response2_json = JSON.parse(response2.body.sub("&&&START&&&", ""))
+        response2_json = service_login_auth2(data)
+
         if (response2_json["code"]).zero?
           @info = response2_json.slice("userId", "passToken")
           @info["deviceId"] = device_id
@@ -78,11 +67,27 @@ module Mi
         end
       end
 
-      def service_login(data, _sid)
-        cookies = DEFAULT_COOKIES.merge({
-                                          "userId" => info["userId"],
-                                          "passToken" => info["passToken"]
+      def service_login(sid)
+        cookies = DEFAULT_COOKIES
+        cookies = cookies.merge({ "userId" => info["userId"], "passToken" => info["passToken"] }) if info["passToken"]
+
+        headers = DEFAULT_HEADERS.merge({
+                                          "Cookie" => cookie2str(cookies)
                                         })
+        client = Faraday.new do |faraday|
+          faraday.headers = headers
+          faraday.use RequestLogger if debug
+        end
+        response = client.get(
+          "https://account.xiaomi.com/pass/serviceLogin?sid=#{sid}&_json=true"
+        )
+        JSON.parse(response.body.sub("&&&START&&&", ""))
+      end
+
+      def service_login_auth2(data)
+        cookies = DEFAULT_COOKIES
+        cookies = cookies.merge({ "userId" => info["userId"], "passToken" => info["passToken"] }) if info["passToken"]
+
         headers = DEFAULT_HEADERS.merge({
                                           "Cookie" => cookie2str(cookies),
                                           "Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8"
@@ -92,10 +97,11 @@ module Mi
           faraday.headers = headers
           faraday.use RequestLogger if debug
         end
-        client.post(
+        response = client.post(
           "https://account.xiaomi.com/pass/serviceLoginAuth2",
           data
         )
+        JSON.parse(response.body.sub("&&&START&&&", ""))
       end
 
       def security_token_service(location, nonce, ssecurity)
