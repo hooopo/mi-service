@@ -7,11 +7,12 @@ require "json"
 require "base64"
 
 require_relative "../logger"
+require_relative "../utils"
 
 module Mi
   module Service
     class Account
-      attr_reader :userid, :password, :info, :debug
+      attr_reader :userid, :password, :info, :debug, :notification_url
 
       DEFAULT_COOKIES = {
         "sdkVersion" => "3.9",
@@ -31,7 +32,7 @@ module Mi
       end
 
       def login(sid)
-        device_id = @info["deviceId"] || get_random(16).upcase
+        device_id = @info["deviceId"] || Mi::Utils.get_random(16).upcase
         login_response = service_login(sid)
 
         unless (login_response["code"]).zero?
@@ -45,6 +46,10 @@ module Mi
             hash: md5_hash(password)
           }
           login_response = service_login_auth2(data)
+          if login_response["notificationUrl"]
+            @notification_url = "https://account.xiaomi.com#{login_response["notificationUrl"]}"
+            raise "Please verify your account by visiting #{@notification_url}"
+          end
         end
 
         if (login_response["code"]).zero?
@@ -70,7 +75,7 @@ module Mi
         end
 
         headers = DEFAULT_HEADERS.merge({
-                                          "Cookie" => cookie2str(cookies)
+                                          "Cookie" => Mi::Utils.cookie2str(cookies)
                                         })
         client = Faraday.new do |faraday|
           faraday.headers = headers
@@ -90,7 +95,7 @@ module Mi
         end
 
         headers = DEFAULT_HEADERS.merge({
-                                          "Cookie" => cookie2str(cookies),
+                                          "Cookie" => Mi::Utils.cookie2str(cookies),
                                           "Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8"
                                         })
         client = Faraday.new do |faraday|
@@ -108,7 +113,7 @@ module Mi
       def security_token_service(sid, location, nonce, ssecurity)
         cookies = DEFAULT_COOKIES
         headers = DEFAULT_HEADERS.merge({
-                                          "Cookie" => cookie2str(cookies)
+                                          "Cookie" => Mi::Utils.cookie2str(cookies)
                                         })
         nsec = "nonce=#{nonce}&#{ssecurity}"
         client_sign = Base64.encode64(Digest::SHA1.digest(nsec)).chomp
@@ -127,22 +132,25 @@ module Mi
         response
       end
 
+      def mi_request; end
+
+      def auth_cookies(sid)
+        return {} if @info[sid].nil?
+
+        {
+          "userId" => @info["userId"],
+          "serviceToken" => @info[sid][1]
+        }
+      end
+
       def success?
         @success
       end
 
       private
 
-      def get_random(length)
-        SecureRandom.alphanumeric(length)
-      end
-
       def md5_hash(string)
         Digest::MD5.hexdigest(string).upcase
-      end
-
-      def cookie2str(cookies)
-        cookies.map { |k, v| "#{k}=#{v}" }.join("; ")
       end
     end
   end

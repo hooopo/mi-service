@@ -22,4 +22,4 @@ Metrics/AbcSize:
   Enabled: false
 
 Layout/LineLength:
-  Max: 120
+  Max: 180
