@@ -31,37 +31,32 @@ module Mi
       end
 
       def login(sid)
-        device_id = info["deviceId"] || get_random(16).upcase
-        response_json = service_login(sid)
+        device_id = @info["deviceId"] || get_random(16).upcase
+        login_response = service_login(sid)
 
-        if (response_json["code"]).zero?
-          @success = true
-          return
+        unless (login_response["code"]).zero?
+          data = {
+            _json: "true",
+            qs: login_response["qs"],
+            sid: login_response["sid"],
+            _sign: login_response["_sign"],
+            callback: login_response["callback"],
+            user: userid,
+            hash: md5_hash(password)
+          }
+          login_response = service_login_auth2(data)
         end
 
-        data = {
-          _json: "true",
-          qs: response_json["qs"],
-          sid: response_json["sid"],
-          _sign: response_json["_sign"],
-          callback: response_json["callback"],
-          user: userid,
-          hash: md5_hash(password)
-        }
-        response2_json = service_login_auth2(data)
-
-        if (response2_json["code"]).zero?
-          @info = response2_json.slice("userId", "passToken")
+        if (login_response["code"]).zero?
+          @info = @info.merge login_response.slice("userId", "passToken")
           @info["deviceId"] = device_id
 
-          response3 = security_token_service(response2_json["location"], response2_json["nonce"],
-                                             response2_json["ssecurity"])
-          if response3.body == "ok"
-            info[sid] = [response2_json["ssecurity"], response3.headers["set-cookie"][/serviceToken=([^;]+)/, 1]]
-            @success = true
-          else
-            @success = false
-          end
+          security_token_service(
+            sid,
+            login_response["location"],
+            login_response["nonce"],
+            login_response["ssecurity"]
+          )
         else
           @success = false
         end
@@ -69,7 +64,10 @@ module Mi
 
       def service_login(sid)
         cookies = DEFAULT_COOKIES
-        cookies = cookies.merge({ "userId" => info["userId"], "passToken" => info["passToken"] }) if info["passToken"]
+        if @info["passToken"]
+          cookies = cookies.merge({ "userId" => @info["userId"],
+                                    "passToken" => @info["passToken"] })
+        end
 
         headers = DEFAULT_HEADERS.merge({
                                           "Cookie" => cookie2str(cookies)
@@ -86,7 +84,10 @@ module Mi
 
       def service_login_auth2(data)
         cookies = DEFAULT_COOKIES
-        cookies = cookies.merge({ "userId" => info["userId"], "passToken" => info["passToken"] }) if info["passToken"]
+        if @info["passToken"]
+          cookies = cookies.merge({ "userId" => @info["userId"],
+                                    "passToken" => @info["passToken"] })
+        end
 
         headers = DEFAULT_HEADERS.merge({
                                           "Cookie" => cookie2str(cookies),
@@ -104,7 +105,7 @@ module Mi
         JSON.parse(response.body.sub("&&&START&&&", ""))
       end
 
-      def security_token_service(location, nonce, ssecurity)
+      def security_token_service(sid, location, nonce, ssecurity)
         cookies = DEFAULT_COOKIES
         headers = DEFAULT_HEADERS.merge({
                                           "Cookie" => cookie2str(cookies)
@@ -119,7 +120,10 @@ module Mi
         end
         response = client.get(new_url)
         service_token = response.headers["set-cookie"][/serviceToken=([^;]+)/, 1]
-        info["serviceToken"] = service_token
+        if service_token
+          @info[sid] = [ssecurity, service_token]
+          @success = true
+        end
         response
       end
 
