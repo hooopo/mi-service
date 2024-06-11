@@ -37,6 +37,27 @@ module Mi
         response = client.get(url)
         JSON.parse(response.body)["data"]
       end
+
+      def text_to_speech(device_id, text)
+        sid = "micoapi"
+        url = "https://api2.mina.mi.com/remote/ubus"
+        request_id = "app_ios_#{Mi::Utils.get_random(30)}"
+        data = {
+          "requestId" => request_id,
+          "deviceId" => device_id,
+          "method" => "text_to_speech",
+          "path" => "mibrain",
+          "message" => { text: text }.to_json
+        }
+
+        client = Faraday.new(url) do |f|
+          f.response :logger if debug
+          f.request :url_encoded
+          f.headers = DEFAULT_HEADERS.merge("Cookie" => Mi::Utils.cookie2str(account.auth_cookies(sid)))
+        end
+        response = client.post(url, data)
+        JSON.parse(response.body)
+      end
     end
   end
 end
