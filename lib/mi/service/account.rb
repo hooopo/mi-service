@@ -147,6 +147,10 @@ module Mi
         @success
       end
 
+      def authed_by_sid?(sid)
+        !@info[sid].nil?
+      end
+
       private
 
       def md5_hash(string)
