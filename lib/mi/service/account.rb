@@ -23,12 +23,22 @@ module Mi
         "User-Agent" => "APP/com.xiaomi.mihome APPV/6.0.103 iosPassportSDK/3.9.0 iOS/14.4 miHSTS"
       }.freeze
 
-      def initialize(userid, password, debug: false)
+      def initialize(userid, password, debug: false, info: {})
         @userid = userid
         @password = password
         @debug = debug
         @success = false
-        @info = {}
+        @info = info
+      end
+
+      def login_all
+        login("xiaomiio")
+        login("micoapi")
+      end
+
+      def login_from_data(data)
+        @info = data
+        @success = true
       end
 
       def login(sid)
