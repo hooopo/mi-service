@@ -17,7 +17,6 @@ require 'mi/service'
 account = Mi::Service::Account.new('userID', 'password', debug: true)
 account.login_all
 account.info # => {"userId"=>"15759xxxx", "security"=>"******", "serviceToken"=>"", "ssecurity"=>"", "userId"=>"15759xxxx", "security"=>"******", "serviceToken"=>"", "ssecurity"=>""}
-```
 account.success?
 ```
 
@@ -26,7 +25,6 @@ Login from data persisted
 ```ruby
 account = Mi::Service::Account.new('user_id', 'password', debug: true)
 account.login_from_data(info) # info is the data from account.info persisted
-```
 account.device_list
 ```
 
