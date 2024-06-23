@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mi-service (0.1.0)
+    mi-service (1.0.0)
       faraday
 
 GEM

@@ -1,24 +1,72 @@
 # Mi::Service
 
-TODO: Delete this and the text below, and describe your gem
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/mi/service`. To experiment with that code, run `bin/console` for an interactive prompt.
+XiaoMi Cloud Service for mi.com
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
-
-Install the gem and add to the application's Gemfile by executing:
-
-    $ bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
-
-If bundler is not being used to manage dependencies, install the gem by executing:
-
-    $ gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```
+gem install mi-service
+```
 
 ## Usage
 
-TODO: Write usage instructions here
+Login
+
+```ruby
+require 'mi/service'
+account = Mi::Service::Account.new('userID', 'password', debug: true)
+account.login_all
+account.info # => {"userId"=>"15759xxxx", "security"=>"******", "serviceToken"=>"", "ssecurity"=>"", "userId"=>"15759xxxx", "security"=>"******", "serviceToken"=>"", "ssecurity"=>""}
+```
+account.success?
+```
+
+Login from data persisted
+
+```ruby
+account = Mi::Service::Account.new('user_id', 'password', debug: true)
+account.login_from_data(info) # info is the data from account.info persisted
+```
+account.device_list
+```
+
+Miot Action
+
+```ruby
+xiaoai = account.device_list[0]
+account.miot_action(xiaoai["miotDID"], [5,1], "Hello world")
+```
+
+Text to Speech
+
+```ruby
+account.text_to_speech(xiaoai["deviceID"], "Hello world")
+```
+
+Message List
+
+```ruby
+account.message_list(device_id: xiaoai["deviceID"], hardware: xiaoai["hardware"], limit: 3)
+```
+
+Player Pause
+
+```ruby
+account.player_pause(xiaoai["deviceID"])
+```
+
+Player Stop
+
+```ruby
+account.player_stop(xiaoai["deviceID"])
+```
+
+Player get status
+
+```ruby
+account.player_get_status(xiaoai["deviceID"])
+```
+
 
 ## Development
 

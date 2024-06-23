@@ -8,6 +8,5 @@ require_relative "service/miio"
 module Mi
   module Service
     class Error < StandardError; end
-    # Your code goes here...
   end
 end
