@@ -1,6 +1,6 @@
 # Mi::Service
 
-XiaoMi Cloud Service for mi.com
+XiaoMi Cloud Service for mi.com, inspired by [Yonsm/MiService](https://github.com/Yonsm/MiService) and [yihong0618/MiService](https://github.com/yihong0618/MiService)
 
 ## Installation
 
