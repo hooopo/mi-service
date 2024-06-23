@@ -5,13 +5,17 @@ require "digest"
 require "faraday"
 require "json"
 require "base64"
+require "forwardable"
 
 require_relative "../logger"
 require_relative "../utils"
+require_relative "miio"
+require_relative "mina"
 
 module Mi
   module Service
     class Account
+      extend Forwardable
       attr_reader :userid, :password, :info, :debug, :notification_url
 
       DEFAULT_COOKIES = {
@@ -29,7 +33,12 @@ module Mi
         @debug = debug
         @success = false
         @info = info
+        @miio = MiIO.new(self, debug: debug)
+        @mina = Mina.new(self, debug: debug)
       end
+
+      def_delegators :@miio, :miot_action
+      def_delegators :@mina, :device_list, :text_to_speech, :player_pause, :player_stop, :player_get_status, :message_list
 
       def login_all
         login("xiaomiio")
@@ -141,8 +150,6 @@ module Mi
         end
         response
       end
-
-      def mi_request; end
 
       def auth_cookies(sid)
         return {} if @info[sid].nil?

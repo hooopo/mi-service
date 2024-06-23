@@ -21,7 +21,6 @@ module Mi
       def initialize(account, debug: false)
         @debug = debug
         @account = account
-        @account.login("micoapi") if @account.info["micoapi"].nil?
       end
 
       def device_list(master = 0)

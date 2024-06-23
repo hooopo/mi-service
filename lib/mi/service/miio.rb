@@ -25,7 +25,6 @@ module Mi
       def initialize(account, debug: false)
         @debug = debug
         @account = account
-        @account.login("xiaomiio") if @account.info["xiaomiio"].nil?
       end
 
       def miot_action(did, iid, args)
